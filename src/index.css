@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the body background to ensure Tailwind works globally */
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
