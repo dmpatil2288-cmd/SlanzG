@@ -33,48 +33,61 @@ import {
 } from 'lucide-react';
 
 // --- API CONFIGURATION ---
-const apiKey = "AIzaSyAbnODoFsTup8LnuIjV-NrgkVAV-eGKCXY"; // Your Gemini API Key
+const apiKey = "AIzaSyAbnODoFsTup8LnuIjV-NrgkVAV-eGKCXY"; // Your Gemini API Key should be here
 
 // --- AI LOGIC ---
 const fetchAiSlang = async (term) => {
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are SlanzG AI. Define the slang term "${term}" using this exact JSON structure:
-              {
-                "term": "${term}",
-                "short_definition": "<1-line meaning>",
-                "long_definition": "<detailed meaning>",
-                "examples": [
-                  {"text": "...", "context": "..."}
-                ],
-                "confidence": "<low|medium|high>",
-                "source_suggestion": "TikTok / Twitter / AAVE / unknown",
-                "category": "<one word category>",
-                "tags": ["<tag1>", "<tag2>"]
-              }
-              Return ONLY valid JSON. No markdown.`
+  // Use exponential backoff for retries
+  for (let i = 0; i < 3; i++) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `You are SlanzG AI. Define the slang term "${term}" using this exact JSON structure:
+                {
+                  "term": "${term}",
+                  "short_definition": "<1-line meaning>",
+                  "long_definition": "<detailed meaning>",
+                  "examples": [
+                    {"text": "...", "context": "..."}
+                  ],
+                  "confidence": "<low|medium|high>",
+                  "source_suggestion": "TikTok / Twitter / AAVE / unknown",
+                  "category": "<one word category>",
+                  "tags": ["<tag1>", "<tag2>"]
+                }
+                Return ONLY valid JSON. No markdown.`
+              }]
             }]
-          }]
-        })
-      }
-    );
+          })
+        }
+      );
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!text) return null;
-    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanText);
-  } catch (error) {
-    console.error("AI Fetch Error:", error);
-    return null;
+      // Check for success status codes
+      if (!response.ok) {
+        if (response.status === 429 && i < 2) {
+          // Retry after delay for rate limiting
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+          continue;
+        }
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!text) return null;
+      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanText);
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed: AI Fetch Error:`, error);
+      if (i === 2) return null; // Only return null after the final retry
+    }
   }
 };
 
@@ -95,7 +108,7 @@ const COLLECTIONS = [
   { name: "Relationships", icon: Heart, color: "bg-pink-100 text-pink-600" },
 ];
 
-// --- COMPONENTS ---
+// --- COMPONENTS (Unchanged for stability) ---
 
 const Header = ({ setView, activeView, onLoginClick, isLoggedIn }) => (
   <header className="sticky top-0 z-50 h-16 flex items-center justify-between px-4 md:px-8 bg-[#FAFAFC]/90 backdrop-blur-md border-b border-gray-100">
@@ -175,8 +188,6 @@ const SlangCard = ({ item, onClick, isAiGenerated = false }) => (
     </div>
   </div>
 );
-
-// --- MAIN VIEWS ---
 
 const HomeView = ({ onSearch, featuredTerms, setView, setSelectedSlang }) => {
   const [query, setQuery] = useState("");
@@ -280,7 +291,7 @@ const ExploreView = ({ featuredTerms, setSelectedSlang }) => {
   );
 };
 
-const CommunityView = ({ setView }) => ( // Accept setView prop
+const CommunityView = ({ setView }) => (
   <div className="max-w-5xl mx-auto px-4 py-12 animate-in fade-in duration-500">
     <div className="text-center mb-12">
       <h2 className="text-4xl font-heading font-bold text-[#0F172A] mb-4">SlanzG Community</h2>
@@ -304,7 +315,7 @@ const CommunityView = ({ setView }) => ( // Accept setView prop
       <h3 className="text-2xl font-heading font-bold text-[#7C3AED] mb-4">Join the Movement</h3>
       <p className="text-[#6B7280] mb-6">Contribute new slang terms and earn badges.</p>
       <button 
-        onClick={() => setView('add')} // Add redirection logic
+        onClick={() => setView('add')}
         className="bg-[#7C3AED] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#6D28D9] transition-colors"
       >
         Start Contributing
@@ -651,7 +662,7 @@ const App = () => {
       case 'explore':
         return <ExploreView featuredTerms={trendingTerms} setSelectedSlang={(s) => { setSelectedSlang(s); setView('detail'); }} />;
       case 'community':
-        return <CommunityView setView={setView} />; // Pass setView here
+        return <CommunityView setView={setView} />;
       case 'about':
         return <DatabaseInfo />;
       case 'profile':
