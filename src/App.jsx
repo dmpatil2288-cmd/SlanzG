@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 
 // --- API CONFIGURATION ---
-const apiKey = "AIzaSyAbnODoFsTup8LnuIjV-NrgkVAV-eGKCXY"; // Your Gemini API Key should be here
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Your Gemini API Key should be here
 
 // --- AI LOGIC ---
 const fetchAiSlang = async (term) => {
