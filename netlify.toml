@@ -8,16 +8,14 @@ Mapping the secret from Netlify UI to the Vite build process
 
 VITE_GEMINI_API_KEY = "$VITE_GEMINI_API_KEY"
 
-Adding these as environment variables is often more effective for the scanner
+Force the scanner to ignore this specific key via environment variables
 
 SECRETS_SCAN_OMIT_KEYS = "VITE_GEMINI_API_KEY"
 SECRETS_SCAN_OMIT_PATHS = "dist/assets/*.js"
 
 [secrets_scanning]
 
-This tells Netlify to stop failing the build for this specific key.
-
-We acknowledge that the VITE_ key will be in the client bundle.
+This tells Netlify to stop failing the build for this specific key
 
 omit_keys = ["VITE_GEMINI_API_KEY"]
 
