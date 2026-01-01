@@ -4,30 +4,20 @@ publish = "dist"
 
 [build.environment]
 
-Mapping the secret from Netlify UI to the Vite build process
 
 VITE_GEMINI_API_KEY = "$VITE_GEMINI_API_KEY"
-
-Adding these as environment variables is often more effective for the scanner
 
 SECRETS_SCAN_OMIT_KEYS = "VITE_GEMINI_API_KEY"
 SECRETS_SCAN_OMIT_PATHS = "dist/assets/*.js"
 
 [secrets_scanning]
 
-This tells Netlify to stop failing the build for this specific key.
-
-We acknowledge that the VITE_ key will be in the client bundle.
-
 omit_keys = ["VITE_GEMINI_API_KEY"]
 
-This ensures the scanner doesn't block the compiled JavaScript files
 
 omit_paths = ["dist/assets/*.js"]
 
 [[redirects]]
-
-Fix for React Router refreshes on the live site
 
 from = "/*"
 to = "/index.html"
